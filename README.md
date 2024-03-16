@@ -1,4 +1,4 @@
-# .github
+# Discard, a messaging platform
 
 > :warning: **Discard is in no way affiliated with Discord!** This project is non-profit, open-source, and is created to learn more about enterprise architecture and messaging in general.
 
