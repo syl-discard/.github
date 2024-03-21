@@ -123,4 +123,4 @@ networks:
   message-rabbitmq:
 ```
 
-You can then run `docker compose build && docker compose`.
+You can then run `docker compose build && docker compose up`.
