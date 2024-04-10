@@ -52,18 +52,18 @@ services:
     user: "node"
     environment:
       - NODE_ENV=development
-      - ORIGIN=http://localhost:6969
-    # env_file:
-    #   - .env
+      - ORIGIN=http://localhost:5173
+    env_file:
+      - .env
     restart: unless-stopped
     ports: 
-      - "6969:3000"
+      - "5173:3000"
     networks:
       - frontend-user
     depends_on:
       - user-service
       - message-service
-      - rabbitmq
+      - rabbitmq  
 
 # USER-SERVICE
   user-service:
@@ -72,8 +72,8 @@ services:
     build:
       context: ./user-service/
       dockerfile: Dockerfile
-    # ports:
-    #   - "6970:8080"
+    #ports:
+    #  - "6970:8080"
     networks:
       - frontend-user
       - user-rabbitmq
@@ -88,8 +88,8 @@ services:
     build:
       context: ./message-service/
       dockerfile: Dockerfile
-    # ports:
-    #   - "6971:8080"
+    #ports:
+    #  - "6969:8080"
     networks:
       - frontend-user
       - message-rabbitmq
