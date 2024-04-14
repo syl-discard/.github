@@ -72,10 +72,10 @@ services:
     build:
       context: ./user-service/
       dockerfile: Dockerfile
-    #ports:
-    #  - "6970:8080"
+    ports:
+      - "6970:8080"
     networks:
-      - frontend-user
+      - frontend-user # need to replace when api gateway is implemented
       - user-rabbitmq
     depends_on:
       - rabbitmq
@@ -88,14 +88,36 @@ services:
     build:
       context: ./message-service/
       dockerfile: Dockerfile
-    #ports:
-    #  - "6969:8080"
+    ports:
+      - "6969:8080"
     networks:
-      - frontend-user
+      - frontend-user # need to replace when api gateway is implemented
       - message-rabbitmq
+      - message-messagedb
     depends_on:
       - rabbitmq
+      - message-db
     restart: unless-stopped
+
+# MESSAGE-STORAGE
+  message-db:
+    container_name: message-db
+    image: cassandra:5.0
+    ports:
+      - "9042:9042"
+    volumes:
+      - ./data/message-db:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=DISCARD_MESSAGE_DB
+    networks:
+      - message-messagedb
+    healthcheck:
+      test: ["CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
 
 # MESSAGE BROKER
   rabbitmq:
@@ -106,21 +128,23 @@ services:
       # - 5672:5672
       - 15672:15672 # management plugin
     volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+      - ./data/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./data/rabbitmq/log/:/var/log/rabbitmq
     networks:
       - user-rabbitmq
       - message-rabbitmq
     healthcheck:
-        test: [ "CMD", "nc", "-z", "localhost", "5672" ]
-        interval: 30s
-        timeout: 10s
-        retries: 5
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
 
 networks:
   frontend-user:
   user-rabbitmq:
   message-rabbitmq:
+  message-messagedb:
 ```
 
 You can then run `docker compose build --rm && docker compose up`.
