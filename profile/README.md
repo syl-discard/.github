@@ -163,5 +163,5 @@ Then enter the following commands in the CQL shell:
 ```sql
 CREATE KEYSPACE messages WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};
 USE messages;
-CREATE TABLE messages (ID text, Message text, ServerID text, UserID uuid);
+CREATE TABLE messages (ID text PRIMARY KEY, Message text, ServerID text, UserID uuid);
 ```
