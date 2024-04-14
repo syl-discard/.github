@@ -148,3 +148,20 @@ networks:
 ```
 
 You can then run `docker compose build && docker compose up`.
+
+## Database Preparation
+The Cassandra database will need to be set up manually. This is subject to change. I may look into adding it in the compose setup.
+
+Enter the Cassandra Query Language Shell through compose:
+```sh
+docker compose exec message-db /bin/bash
+```
+```sh
+cqlsh
+```
+Then enter the following commands in the CQL shell:
+```sql
+CREATE KEYSPACE messages WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};
+USE messages;
+CREATE TABLE messages (ID text, Message text, ServerID text, UserID uuid);
+```
