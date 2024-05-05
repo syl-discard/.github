@@ -34,8 +34,6 @@ Your folder structure, with `discard` as the root, should be like this:
 Open the `docker-compose.yml` file and paste the following into it:
 
 ```yml
-version: "3"
-
 # This compose file should be in the root of the project, with each 
 # repository of the organization in a separate folder.
 
@@ -61,9 +59,12 @@ services:
     networks:
       - frontend-user
     depends_on:
-      - user-service
-      - message-service
-      - rabbitmq  
+      user-service:
+        condition: service_started
+      message-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
 # USER-SERVICE
   user-service:
@@ -73,42 +74,67 @@ services:
       context: ./user-service/
       dockerfile: Dockerfile
     ports:
-      - "6970:8080"
+      - "6969:8080"
     networks:
       - frontend-user # need to replace when api gateway is implemented
       - user-rabbitmq
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
 # MESSAGE-SERVICE
   message-service:
-    container_name: message-service
+    # container_name: message-service # to use docker compose replication, comment out container_name
+    deploy:
+      replicas: 3
+      mode: replicated
     image: message-service
     build:
       context: ./message-service/
       dockerfile: Dockerfile
     ports:
-      - "6969:8080"
+      - 6970-7000:8080
     networks:
       - frontend-user # need to replace when api gateway is implemented
       - message-rabbitmq
       - message-messagedb
     depends_on:
-      - rabbitmq
-      - message-db
+      rabbitmq:
+        condition: service_healthy
+      message-db:
+        condition: service_healthy
     restart: unless-stopped
 
 # MESSAGE-STORAGE
+  message-db-init:
+    container_name: message-db-init
+    image: cassandra:5.0
+    networks:
+      - message-messagedb
+    entrypoint: ["/messages-schema-init.sh"]
+    depends_on:
+      message-db:
+        condition: service_healthy
+    volumes:
+      - ./init/messages-schema-init.sh:/messages-schema-init.sh
+    restart: "no"
+
   message-db:
     container_name: message-db
+    hostname: message-db
     image: cassandra:5.0
-    ports:
-      - "9042:9042"
+    # ports:
+      # - "9042:9042"
     volumes:
       - ./data/message-db:/var/lib/cassandra
-    environment:
-      - CASSANDRA_CLUSTER_NAME=DISCARD_MESSAGE_DB
+    environment: &environment
+      CASSANDRA_CLUSTER_NAME: DISCARD_MESSAGE_DB
+      CASSANDRA_SEEDS: message-db
+      CASSANDRA_DC: "DC1"
+      CASSANDRA_RACK: "RACK1"
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      CASSANDRA_NUM_TOKENS: 128
     networks:
       - message-messagedb
     healthcheck:
@@ -116,6 +142,41 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
+    restart: unless-stopped
+
+  message-db-node-2:
+    container_name: message-db-node-2
+    image: cassandra:5.0
+    # ports:
+      # - "9043:9042"
+    volumes:
+      - ./data/message-db-node-2:/var/lib/cassandra
+    environment: *environment
+    networks:
+      - message-messagedb
+    healthcheck:
+      test: ["CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    depends_on:
+      message-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  message-db-node-3:
+    container_name: message-db-node-3
+    image: cassandra:5.0
+    # ports:
+      # - "9044:9042"
+    volumes:
+      - ./data/message-db-node-3:/var/lib/cassandra
+    environment: *environment
+    networks:
+      - message-messagedb
+    depends_on:
+      message-db-node-2:
+        condition: service_healthy
     restart: unless-stopped
 
 
