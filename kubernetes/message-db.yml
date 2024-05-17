@@ -11,6 +11,12 @@ spec:
     ports:
         - port: 9042
           name: cql
+        - port: 7000
+          name: intra-node
+        - port: 7001
+          name: tls-intra-node
+        - port: 7199
+          name: jmx
     selector:
         app: message-db
 
@@ -88,6 +94,8 @@ spec:
                         value: "DC1"
                       - name: CASSANDRA_RACK
                         value: "RACK1"
+                      - name: CASSANDRA_ENDPOINT_SNITCH
+                        value: "GossipingPropertyFileSnitch"
                       - name: POD_IP
                         valueFrom:
                             fieldRef:
