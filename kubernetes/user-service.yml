@@ -16,7 +16,7 @@ spec:
         spec:
             containers:
                 - name: user-service
-                  image: ghcr.io/syl-discard/user-service:main
+                  image: ghcr.io/syl-discard/user-service:1.0.0
                   imagePullPolicy: Always
                   ports:
                       - containerPort: 8080
@@ -38,6 +38,8 @@ kind: Service
 metadata:
     name: user-service
     namespace: default
+    labels:
+        app: user-api
 spec:
     selector:
         app: user-service

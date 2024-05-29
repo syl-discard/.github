@@ -1,33 +1,17 @@
+---
 apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
+kind: ServiceMonitor
 metadata:
-    name: prometheus
+    name: user-service-monitor
     labels:
+        release: prometheus
         app: prometheus
 spec:
-    image: quay.io/prometheus/prometheus:v2.22.1
-    nodeSelector:
-        kubernetes.io/os: linux
-    replicas: 2
-    resources:
-        requests:
-            memory: 400Mi
-    securityContext:
-        fsGroup: 2000
-        runAsNonRoot: true
-        runAsUser: 1000
-    serviceAccountName: prometheus
-    version: v2.22.1
-    serviceMonitorSelector: {}
-    remoteWrite:
-        - url: "https://prometheus-prod-22-prod-eu-west-3.grafana.net/api/prom/push"
-          basicAuth:
-              username:
-                  name: kubepromsecret
-                  key: username
-              password:
-                  name: kubepromsecret
-                  key: password
-    replicaExternalLabelName: "__replica__"
-    externalLabels:
-        cluster: "discard-prom-cluster"
+    # jobLabel: job
+    endpoints:
+        - port: api
+          interval: 10s
+          path: /api/v1/user/metrics
+    selector:
+        matchLabels:
+            app: user-api
