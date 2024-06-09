@@ -14,16 +14,16 @@ spec:
             labels:
                 app: message-service
         spec:
-            initContainers:
-                - name: setup-db
-                  image: cassandra:5.0
-                  command: ["bash", "-c"]
-                  args:
-                      - |
-                          date; until cqlsh message-db -e "DESCRIBE KEYSPACES;"; do echo waiting for cassandra; sleep 2; done; cqlsh message-db -e "CREATE KEYSPACE IF NOT EXISTS messages WITH REPLICATION = {'class':'NetworkTopologyStrategy','DC1':1}; CREATE TABLE IF NOT EXISTS messages.messages (id uuid,message text, serverid uuid, userid uuid, PRIMARY KEY (id));"
+            # initContainers: # this is for when you use a local db
+            #     - name: setup-db
+            #       image: cassandra:5.0
+            #       command: ["bash", "-c"]
+            #       args:
+            #           - |
+            #               date; until cqlsh message-db -e "DESCRIBE KEYSPACES;"; do echo waiting for cassandra; sleep 2; done; cqlsh message-db -e "CREATE KEYSPACE IF NOT EXISTS messages WITH REPLICATION = {'class':'NetworkTopologyStrategy','DC1':1}; CREATE TABLE IF NOT EXISTS messages.messages (id uuid,message text, serverid uuid, userid uuid, PRIMARY KEY (id));"
             containers:
                 - name: message-service
-                  image: ghcr.io/syl-discard/message-service:main
+                  image: ghcr.io/syl-discard/message-service:1.0.0
                   imagePullPolicy: Always
                   ports:
                       - containerPort: 8080
@@ -39,7 +39,22 @@ spec:
                       - name: RABBITMQ_SERVER_ADDRESS
                         value: "amqp://guest:guest@rabbitmq:5672/"
                       - name: DATABASE_URL
-                        value: "message-db"
+                        valueFrom: # https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#define-a-container-environment-variable-with-data-from-a-single-secret
+                            secretKeyRef:
+                                name: message-db
+                                key: url
+                      - name: ASTRA_DATABASE_ID
+                        valueFrom:
+                            secretKeyRef:
+                                name: message-db
+                                key: astra-id
+                      - name: ASTRA_TOKEN
+                        valueFrom:
+                            secretKeyRef:
+                                name: message-db
+                                key: astra-token
+                      - name: DATABASE_PROVIDER
+                        value: "astra"
 
 ---
 apiVersion: v1
