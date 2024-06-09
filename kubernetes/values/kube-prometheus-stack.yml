@@ -15,3 +15,4 @@ prometheus:
         replicaExternalLabelName: "__replica__"
         externalLabels:
             cluster: "discard-prom-cluster"
+        retention: 8h
