@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: frontend
+    namespace: default
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: frontend
+    template:
+        metadata:
+            labels:
+                app: frontend
+        spec:
+            containers:
+                - name: frontend
+                  image: ghcr.io/syl-discard/frontend:1.0.1
+                  imagePullPolicy: Always
+                  ports:
+                      - containerPort: 3000
+                        name: web
+                  resources:
+                      limits:
+                          cpu: 200m
+                          memory: 500Mi
+                      requests:
+                          cpu: 200m
+                          memory: 500Mi
+                  env:
+                      - name: NODE_ENV
+                        value: "development"
+                      - name: ORIGIN
+                        value: "http://discard.local" #"http://discard.local.fake.com"
+                      - name: AUTH_SECRET
+                        valueFrom:
+                            secretKeyRef:
+                                name: frontend
+                                key: auth_secret
+                      - name: GOOGLE_CLIENT_ID
+                        valueFrom:
+                            secretKeyRef:
+                                name: frontend
+                                key: google_client_id
+                      - name: GOOGLE_CLIENT_SECRET
+                        valueFrom:
+                            secretKeyRef:
+                                name: frontend
+                                key: google_client_secret
+                      - name: BASE_URL
+                        value: "http://discard.local" #"http://discard.local.fake.com"
+                      - name: API_URL
+                        value: "http://discard.local/api/v1"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: frontend
+    namespace: default
+    labels:
+        app: frontend
+spec:
+    selector:
+        app: frontend
+    ports:
+        - port: 3000
+          targetPort: 3000
+          name: web
+          protocol: TCP

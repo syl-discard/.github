@@ -5,7 +5,7 @@ metadata:
     name: message-service
     namespace: default
 spec:
-    replicas: 3
+    replicas: 1
     selector:
         matchLabels:
             app: message-service
@@ -23,7 +23,7 @@ spec:
             #               date; until cqlsh message-db -e "DESCRIBE KEYSPACES;"; do echo waiting for cassandra; sleep 2; done; cqlsh message-db -e "CREATE KEYSPACE IF NOT EXISTS messages WITH REPLICATION = {'class':'NetworkTopologyStrategy','DC1':1}; CREATE TABLE IF NOT EXISTS messages.messages (id uuid,message text, serverid uuid, userid uuid, PRIMARY KEY (id));"
             containers:
                 - name: message-service
-                  image: ghcr.io/syl-discard/message-service:1.0.0
+                  image: ghcr.io/syl-discard/message-service:1.0.2
                   imagePullPolicy: Always
                   ports:
                       - containerPort: 8080
